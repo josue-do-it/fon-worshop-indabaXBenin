@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IndabaX Benin 2026 · Evaluating LLMs on Fon</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            300: '#86efac',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#0f766e',
+                            800: '#0c6e45',
+                            900: '#085434',
+                            dark: '#053822',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'soft-xs': '0 2px 8px -2px rgba(15, 23, 42, 0.04)',
+                        'soft-md': '0 12px 24px -6px rgba(15, 23, 42, 0.06), 0 4px 12px -4px rgba(15, 23, 42, 0.02)',
+                        'soft-lg': '0 20px 40px -12px rgba(15, 23, 42, 0.08)',
+                        'glow': '0 0 30px 0 rgba(34, 197, 94, 0.18)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #fafbf9;
+            color: #1e293b;
+        }
+        .glass-nav {
+            background: rgba(8, 84, 52, 0.95);
+            backdrop-filter: blur(16px);
+        }
+        .bg-dot-texture {
+            background-color: #0c6e45;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.22) 1.2px, transparent 1.2px);
+            background-size: 16px 16px;
+        }
+        .bg-dot-texture-dark {
+            background-color: #085434;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.18) 1.2px, transparent 1.2px);
+            background-size: 16px 16px;
+        }
+        .quiz-option {
+            transition: all 0.2s ease;
+        }
+        .page-view {
+            transition: opacity 0.2s ease-in-out;
+        }
+    </style>
+
+    <!-- Initialisation globale du script de navigation -->
+    <script>
+        function navigateTo(pageId, sectionId = null) {
+            // Masquer toutes les vues
+            const pages = document.querySelectorAll('.page-view');
+            pages.forEach(page => page.classList.add('hidden'));
+
+            // cibler la vue désirée
+            const targetPage = document.getElementById('page-' + pageId);
+            if (targetPage) {
+                targetPage.classList.remove('hidden');
+            }
+
+            // Mise à jour de l'état actif du menu
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('bg-white/15', 'text-white'));
+            const activeBtn = document.getElementById('nav-' + pageId);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-white/15', 'text-white');
+            }
+
+            // Défilement optionnel vers une section
+            if (sectionId) {
+                setTimeout(() => {
+                    const section = document.getElementById(sectionId);
+                    if (section) {
+                        section.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }, 50);
+            } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            // Fermeture du menu mobile
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.add('hidden');
+            }
+        }
+
+        window.navigateTo = navigateTo;
+    </script>
+</head>
+<body class="antialiased selection:bg-brand-500 selection:text-white text-slate-800 flex flex-col min-h-screen">
+
+    <!-- En-tête fixe et Navigation -->
+    <header class="sticky top-0 z-50 glass-nav text-white border-b border-brand-800/40 transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <button onclick="navigateTo('home')" class="flex items-center gap-3.5 group cursor-pointer text-left">
+                <div class="bg-white/10 group-hover:bg-white/20 text-white font-extrabold px-3.5 py-1.5 rounded-2xl border border-white/20 text-xs tracking-wide transition-all backdrop-blur-md">
+                    IndabaX 2026
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-bold text-base leading-tight tracking-tight">Benin Workshop</span>
+                    <span class="text-xs text-brand-200 font-medium opacity-90">Generative AI & African NLP</span>
+                </div>
+            </button>
+            
+            <!-- Navigation Bureau -->
+            <nav class="hidden md:flex items-center space-x-1 font-medium text-sm text-brand-100">
+                <button onclick="navigateTo('home')" id="nav-home" class="nav-btn px-4 py-2 rounded-full hover:bg-white/10 hover:text-white transition-all bg-white/15 text-white">Home</button>
+                <button onclick="navigateTo('home', 'heritage')" class="nav-btn px-4 py-2 rounded-full hover:bg-white/10 hover:text-white transition-all">Heritage</button>
+                <button onclick="navigateTo('home', 'hands-on')" class="nav-btn px-4 py-2 rounded-full hover:bg-white/10 hover:text-white transition-all">Deliverables</button>
+                <button onclick="navigateTo('home', 'materials')" class="nav-btn px-4 py-2 rounded-full hover:bg-white/10 hover:text-white transition-all">Resources</button>
+                
+                <!-- Boutons de pages séparées -->
+                <button onclick="navigateTo('quiz')" id="nav-quiz" class="nav-btn px-4 py-2 rounded-full hover:bg-white/10 hover:text-white transition-all text-brand-300 font-semibold flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-question text-xs"></i>
+                    <span>Quiz</span>
+                </button>
+                <button onclick="navigateTo('details')" id="nav-details" class="nav-btn px-4 py-2 rounded-full hover:bg-white/10 hover:text-white transition-all text-brand-300 font-semibold flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-info text-xs"></i>
+                    <span>Details</span>
+                </button>
+            </nav>
+
+            <!-- Bouton d'action CTA -->
+            <div class="hidden sm:block">
+                <button onclick="navigateTo('details')" class="bg-white text-brand-900 hover:bg-brand-50 font-bold px-5 py-2.5 rounded-full text-sm shadow-soft-xs hover:shadow-soft-md transition-all transform hover:-translate-y-0.5 inline-flex items-center gap-2">
+                    <span>Session Details</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </button>
+            </div>
+
+            <!-- Bouton Hamburger Mobile -->
+            <button id="mobile-menu-btn" class="md:hidden text-white p-2 rounded-xl hover:bg-white/10 transition-colors" aria-label="Toggle Navigation Menu">
+                <i class="fa-solid fa-bars text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Menu Navigation Mobile -->
+        <div id="mobile-menu" class="hidden md:hidden bg-brand-900 border-t border-brand-800 px-6 pt-4 pb-6 space-y-3 font-medium text-sm">
+            <button onclick="navigateTo('home')" class="block w-full text-left py-2 text-brand-100 hover:text-white border-b border-brand-800/60">Home</button>
+            <button onclick="navigateTo('home', 'heritage')" class="block w-full text-left py-2 text-brand-100 hover:text-white border-b border-brand-800/60">Heritage & History</button>
+            <button onclick="navigateTo('home', 'hands-on')" class="block w-full text-left py-2 text-brand-100 hover:text-white border-b border-brand-800/60">Deliverables</button>
+            <button onclick="navigateTo('home', 'materials')" class="block w-full text-left py-2 text-brand-100 hover:text-white border-b border-brand-800/60">Resources</button>
+            <button onclick="navigateTo('quiz')" class="block w-full text-left py-2 text-brand-300 font-semibold hover:text-white border-b border-brand-800/60">Quiz (Separate Page)</button>
+            <button onclick="navigateTo('details')" class="block w-full text-left py-2 text-brand-300 font-semibold hover:text-white">Session Details (Separate Page)</button>
+        </div>
+    </header>
+
+    <!-- CONTENEUR DES PAGES DE L'APPLICATION -->
+    <div class="flex-grow">
+        
+        <!-- ================= PAGE 1: PAGE D'ACCUEIL ================= -->
+        <div id="page-home" class="page-view">
+            <!-- Section Hero -->
+            <section id="hero" class="relative bg-dot-texture text-white py-20 lg:py-28 overflow-hidden">
+                <!-- Motif filigrane géométrique africain -->
+                <div class="absolute inset-0 pointer-events-none overflow-hidden select-none opacity-10 flex items-center justify-between px-4">
+                    <svg class="w-96 h-96 text-white transform -translate-x-20 rotate-12" viewBox="0 0 200 200" fill="currentColor">
+                        <path d="M 30,170 L 60,30 L 110,30 L 90,80 L 140,80 L 110,170 Z M 75,60 L 65,110 L 105,110 Z"/>
+                        <path d="M 130,30 L 180,30 L 150,90 L 180,170 L 130,170 Z"/>
+                    </svg>
+                    <svg class="w-[500px] h-[500px] text-white transform translate-x-24 -rotate-6" viewBox="0 0 240 240" fill="currentColor">
+                        <path d="M20 30h60l-30 60 40 120H30L60 90z M110 30h80v40h-50v30h40v40h-40v50h-30z M190 30h40v180h-40z"/>
+                    </svg>
+                </div>
+
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    <div class="max-w-3xl space-y-8">
+                        <div class="inline-flex items-center gap-2.5 bg-white/10 backdrop-blur-md text-brand-100 font-semibold text-xs sm:text-sm px-4 py-2 rounded-full border border-white/20 shadow-soft-xs">
+                            <span class="bg-white text-brand-900 text-xs px-2.5 py-0.5 rounded-full font-extrabold uppercase tracking-wider">BENIN NLP</span>
+                            <span>Generative AI, LLMs & African Languages</span>
+                        </div>
+
+                        <div class="space-y-4">
+                            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.15] text-white">
+                                How Well Do LLMs Understand Fon?
+                            </h1>
+                            <p class="text-lg sm:text-2xl text-brand-100 font-normal leading-relaxed text-slate-100">
+                                Building a Mini-Benchmark for a Low-Resource African Language
+                            </p>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-3 text-xs sm:text-sm font-medium text-brand-100/90 pt-2">
+                            <div class="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/15">
+                                <i class="fa-regular fa-calendar-check text-brand-300"></i>
+                                <span>IndabaX Benin 2026</span>
+                            </div>
+                            <div class="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/15">
+                                <i class="fa-solid fa-location-dot text-brand-300"></i>
+                                <span>Cotonou & Live Online</span>
+                            </div>
+                            <div class="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/15">
+                                <i class="fa-regular fa-clock text-brand-300"></i>
+                                <span>50 Minutes (Hands-on)</span>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-4">
+                            <button onclick="navigateTo('details')" class="bg-white text-brand-900 hover:bg-brand-50 font-bold px-8 py-4 rounded-2xl text-base shadow-soft-md hover:shadow-glow hover:-translate-y-0.5 transition-all text-center flex items-center justify-center gap-3">
+                                <i class="fa-solid fa-sparkles text-brand-600"></i>
+                                <span>Join the Workshop</span>
+                            </button>
+                            <button onclick="navigateTo('home', 'materials')" class="bg-white/10 hover:bg-white/20 text-white font-semibold px-7 py-4 rounded-2xl text-base border border-white/25 backdrop-blur-sm transition-all text-center flex items-center justify-center gap-2.5">
+                                <i class="fa-solid fa-folder-open text-xs text-brand-200"></i>
+                                <span>Access Materials</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contenu de la page d'accueil -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 space-y-28">
+
+                <!-- Section: Histoire & Patrimoine linguistique -->
+                <section id="heritage" class="scroll-mt-28">
+                    <div class="bg-gradient-to-br from-emerald-900 via-brand-900 to-brand-800 rounded-3xl p-8 sm:p-12 text-white shadow-soft-lg relative overflow-hidden">
+                        <div class="absolute right-0 top-0 bottom-0 w-1/2 opacity-10 pointer-events-none flex items-center justify-center select-none">
+                            <svg class="w-full h-full text-white" viewBox="0 0 300 300" fill="currentColor">
+                                <path d="M20 40h70l-35 70 50 140H30L70 110z M110 40h90v45h-55v35h45v45h-45v55h-35z M210 40h60v230h-60z"/>
+                            </svg>
+                        </div>
+
+                        <div class="relative z-10 space-y-8 max-w-4xl">
+                            <div class="space-y-3">
+                                <span class="text-xs font-bold text-brand-300 uppercase tracking-widest bg-white/10 px-3.5 py-1.5 rounded-full border border-white/15 inline-block">
+                                    African Benin & Linguistic History
+                                </span>
+                                <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                                    Languages Have a History: From Danxomé Royal Tradition to Digital AI
+                                </h2>
+                            </div>
+
+                            <p class="text-brand-100 text-base sm:text-lg leading-relaxed font-normal">
+                                The Fon language (Fongbe) is not merely a means of communication—it is the living memory of the Kingdom of Dahomey (Danxomé), carrying centuries of oral poetry, royal proverbs, philosophy, and ancestral wisdom. African languages possess deep historical roots, unique tonal structures, and expressive symbols that reflect West Africa’s rich cultural heritage.
+                            </p>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+                                <div class="bg-white/10 backdrop-blur-md border border-white/15 p-6 rounded-2xl space-y-2">
+                                    <div class="w-10 h-10 rounded-xl bg-brand-400 text-brand-900 font-extrabold flex items-center justify-center text-lg">
+                                        <i class="fa-solid fa-book-bookmark"></i>
+                                    </div>
+                                    <h3 class="font-bold text-base text-white">Oral Tradition & Wisdom</h3>
+                                    <p class="text-xs text-brand-100/90 leading-relaxed">
+                                        Proverbs, storytelling, and songs hold precise linguistic tones that convey complex cultural metaphors.
+                                    </p>
+                                </div>
+
+                                <div class="bg-white/10 backdrop-blur-md border border-white/15 p-6 rounded-2xl space-y-2">
+                                    <div class="w-10 h-10 rounded-xl bg-brand-400 text-brand-900 font-extrabold flex items-center justify-center text-lg">
+                                        <i class="fa-solid fa-pen-nib"></i>
+                                    </div>
+                                    <h3 class="font-bold text-base text-white">Orthography & Diacritics</h3>
+                                    <p class="text-xs text-brand-100/90 leading-relaxed">
+                                        Fon orthography incorporates unique Latin-based symbols (ɖ, ŋ, ɛ, ɔ) and tonal accents essential for correct meaning.
+                                    </p>
+                                </div>
+
+                                <div class="bg-white/10 backdrop-blur-md border border-white/15 p-6 rounded-2xl space-y-2">
+                                    <div class="w-10 h-10 rounded-xl bg-brand-400 text-brand-900 font-extrabold flex items-center justify-center text-lg">
+                                        <i class="fa-solid fa-microchip"></i>
+                                    </div>
+                                    <h3 class="font-bold text-base text-white">The Modern AI Horizon</h3>
+                                    <p class="text-xs text-brand-100/90 leading-relaxed">
+                                        Ensuring Fon thrives in the age of LLMs requires local benchmarks created by African researchers for African context.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section: Problématique & À propos -->
+                <section id="about" class="scroll-mt-28">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                        <div class="lg:col-span-7 space-y-6">
+                            <div>
+                                <span class="text-brand-700 font-bold text-xs tracking-wider uppercase bg-brand-50 px-3.5 py-1.5 rounded-full border border-brand-200">
+                                    Context & Challenge
+                                </span>
+                            </div>
+                            
+                            <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                                Bridging the Linguistic Divide in Modern AI Evaluation
+                            </h2>
+
+                            <div class="prose prose-slate text-slate-600 leading-relaxed space-y-4 font-normal text-base">
+                                <p>
+                                    Large Language Models (LLMs) such as GPT-4, LLaMA, and Qwen have transformed natural language processing globally. However, their comprehension of <strong>Fongbe (Fon)</strong>—a primary language spoken by over 4 million people in Benin—remains severely understudied and prone to high hallucination rates.
+                                </p>
+                                <p>
+                                    Because Fon is a tonal, low-resource language with unique orthographic diacritics and complex grammar, generic benchmarks fail to reflect real-world model competence. In this 50-minute practical session, participants will actively construct a diagnostic mini-benchmark targeting Fon translation, tokenization accuracy, and cultural prompt comprehension.
+                                </p>
+                            </div>
+
+                            <div class="bg-gradient-to-r from-brand-50/80 to-emerald-50/50 border border-brand-100 rounded-2xl p-6 flex items-start gap-4 shadow-soft-xs">
+                                <div class="bg-brand-600 text-white p-3 rounded-xl shadow-soft-xs shrink-0">
+                                    <i class="fa-solid fa-seedling text-lg"></i>
+                                </div>
+                                <div class="space-y-1">
+                                    <h4 class="font-bold text-slate-900 text-base">Why Fon Evaluation Matters</h4>
+                                    <p class="text-sm text-slate-600 leading-relaxed">
+                                        Building indigenous evaluation datasets ensures African AI systems serve local needs accurately without losing cultural context or linguistic integrity.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-5">
+                            <div class="bg-white border border-slate-200/80 rounded-3xl p-7 shadow-soft-lg space-y-6 relative">
+                                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                                    <span class="font-bold text-xs text-slate-400 uppercase tracking-wider">Language Data Representation</span>
+                                    <span class="text-xs bg-amber-50 text-amber-700 px-3 py-1 rounded-full font-semibold border border-amber-200/60">Low Resource Gap</span>
+                                </div>
+
+                                <div class="space-y-4">
+                                    <div>
+                                        <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                            <span class="text-slate-700">English / French</span>
+                                            <span class="text-brand-700 font-bold">High (>95%)</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                            <div class="bg-brand-600 h-full w-[95%] rounded-full"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                            <span class="text-slate-700">Well-Documented Languages</span>
+                                            <span class="text-brand-700 font-bold">Moderate (40%)</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                            <div class="bg-brand-400 h-full w-[40%] rounded-full"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                            <span class="text-slate-700">Fon (Fongbe)</span>
+                                            <span class="text-rose-600 font-bold">&lt; 0.01%</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                            <div class="bg-rose-500 h-full w-[3%] rounded-full"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 text-xs space-y-2">
+                                    <div class="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Effect of Standard BPE Tokenization</div>
+                                    <div class="text-slate-800 font-semibold">Fon Input Phrase: <span class="text-brand-800">"Agbaza lé ɖò ganji"</span></div>
+                                    <div class="flex flex-wrap gap-1.5 pt-1">
+                                        <span class="bg-white text-slate-700 border border-slate-200 px-2.5 py-1 rounded-lg shadow-soft-xs font-mono">Ag</span>
+                                        <span class="bg-white text-slate-700 border border-slate-200 px-2.5 py-1 rounded-lg shadow-soft-xs font-mono">baza</span>
+                                        <span class="bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-lg shadow-soft-xs font-mono">l</span>
+                                        <span class="bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-lg shadow-soft-xs font-mono">é</span>
+                                        <span class="bg-white text-slate-700 border border-slate-200 px-2.5 py-1 rounded-lg shadow-soft-xs font-mono">ɖò</span>
+                                        <span class="bg-white text-slate-700 border border-slate-200 px-2.5 py-1 rounded-lg shadow-soft-xs font-mono">ganji</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-500 pt-1 italic">
+                                        * Standard tokenizers split Fon diacritics into fragmented, broken sub-words.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section: Livrables -->
+                <section id="hands-on" class="scroll-mt-28">
+                    <div class="text-center max-w-2xl mx-auto mb-14 space-y-3">
+                        <span class="text-brand-700 font-bold text-xs tracking-wider uppercase bg-brand-50 px-3.5 py-1.5 rounded-full border border-brand-200">
+                            Practical Deliverables
+                        </span>
+                        <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                            What You Will Build & Execute
+                        </h2>
+                        <p class="text-slate-600 text-base">
+                            A step-by-step hands-on pipeline in Google Colab to evaluate foundation models on Fon text tasks.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="bg-white border border-slate-200/70 rounded-3xl p-7 shadow-soft-md hover:shadow-soft-lg hover:-translate-y-1 transition-all flex flex-col justify-between group">
+                            <div class="space-y-4">
+                                <div class="w-12 h-12 bg-brand-50 text-brand-700 rounded-2xl flex items-center justify-center font-bold text-lg group-hover:bg-brand-600 group-hover:text-white transition-all shadow-soft-xs">
+                                    01
+                                </div>
+                                <h3 class="text-xl font-bold text-slate-900 group-hover:text-brand-800 transition-colors">Fon Prompt Set</h3>
+                                <p class="text-sm text-slate-600 leading-relaxed font-normal">
+                                    Assemble a balanced 50-item evaluation prompt dataset covering translation, proverbs, and Fon grammar.
+                                </p>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-100 space-y-2 text-xs font-medium text-slate-500">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+                                    <span>Official Fon orthography</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+                                    <span>Cultural context variations</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white border border-slate-200/70 rounded-3xl p-7 shadow-soft-md hover:shadow-soft-lg hover:-translate-y-1 transition-all flex flex-col justify-between group">
+                            <div class="space-y-4">
+                                <div class="w-12 h-12 bg-brand-50 text-brand-700 rounded-2xl flex items-center justify-center font-bold text-lg group-hover:bg-brand-600 group-hover:text-white transition-all shadow-soft-xs">
+                                    02
+                                </div>
+                                <h3 class="text-xl font-bold text-slate-900 group-hover:text-brand-800 transition-colors">Test 3 LLMs</h3>
+                                <p class="text-sm text-slate-600 leading-relaxed font-normal">
+                                    Deploy parallel inference queries across LLaMA-3, Mistral, and Qwen using tailored prompt templates.
+                                </p>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-100 space-y-2 text-xs font-medium text-slate-500">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+                                    <span>Inference via Hugging Face API</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+                                    <span>Zero-shot vs. Few-shot testing</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white border border-slate-200/70 rounded-3xl p-7 shadow-soft-md hover:shadow-soft-lg hover:-translate-y-1 transition-all flex flex-col justify-between group">
+                            <div class="space-y-4">
+                                <div class="w-12 h-12 bg-brand-50 text-brand-700 rounded-2xl flex items-center justify-center font-bold text-lg group-hover:bg-brand-600 group-hover:text-white transition-all shadow-soft-xs">
+                                    03
+                                </div>
+                                <h3 class="text-xl font-bold text-slate-900 group-hover:text-brand-800 transition-colors">Rubric Scoring</h3>
+                                <p class="text-sm text-slate-600 leading-relaxed font-normal">
+                                    Apply automated metrics (chrF, BLEU) combined with human-in-the-loop tone evaluation rubrics.
+                                </p>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-100 space-y-2 text-xs font-medium text-slate-500">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+                                    <span>Semantic accuracy scoring</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+                                    <span>Diacritic sensitivity checks</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white border border-slate-200/70 rounded-3xl p-7 shadow-soft-md hover:shadow-soft-lg hover:-translate-y-1 transition-all flex flex-col justify-between group">
+                            <div class="space-y-4">
+                                <div class="w-12 h-12 bg-brand-50 text-brand-700 rounded-2xl flex items-center justify-center font-bold text-lg group-hover:bg-brand-600 group-hover:text-white transition-all shadow-soft-xs">
+                                    04
+                                </div>
+                                <h3 class="text-xl font-bold text-slate-900 group-hover:text-brand-800 transition-colors">Leaderboard</h3>
+                                <p class="text-sm text-slate-600 leading-relaxed font-normal">
+                                    Export a synthesis performance matrix ready for publication as an open-source diagnostic dashboard.
+                                </p>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-100 space-y-2 text-xs font-medium text-slate-500">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+                                    <span>Export results in CSV format</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+                                    <span>Error analysis reporting</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section: Matériel & Ressources -->
+                <section id="materials" class="scroll-mt-28">
+                    <div class="flex flex-col md:flex-row md:items-end justify-between mb-12">
+                        <div>
+                            <span class="text-brand-700 font-bold text-xs tracking-wider uppercase bg-brand-50 px-3.5 py-1.5 rounded-full border border-brand-200">
+                                Open Access Tools
+                            </span>
+                            <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-2">
+                                Materials & Workshop Assets
+                            </h2>
+                        </div>
+                        <p class="text-slate-600 text-sm max-w-md mt-2 md:mt-0 font-normal">
+                            All workshop notebooks, code scripts, prompt templates, and evaluation datasets are open source.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <a href="https://github.com" target="_blank" rel="noopener" class="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-soft-md hover:shadow-soft-lg hover:-translate-y-1 transition-all flex flex-col justify-between group">
+                            <div class="space-y-4">
+                                <div class="w-12 h-12 bg-slate-50 text-slate-800 rounded-2xl flex items-center justify-center text-xl group-hover:bg-brand-600 group-hover:text-white transition-all shadow-soft-xs">
+                                    <i class="fa-brands fa-github"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-base text-slate-900 group-hover:text-brand-800 transition-colors">GitHub Repository</h4>
+                                    <p class="text-xs text-slate-500 leading-relaxed mt-1 font-normal">
+                                        Evaluation scripts, prompt wrappers, and dataset processing routines.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-brand-700">
+                                <span>View Repository</span>
+                                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                            </div>
+                        </a>
+
+                        <a href="https://colab.research.google.com" target="_blank" rel="noopener" class="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-soft-md hover:shadow-soft-lg hover:-translate-y-1 transition-all flex flex-col justify-between group">
+                            <div class="space-y-4">
+                                <div class="w-12 h-12 bg-amber-50 text-amber-700 rounded-2xl flex items-center justify-center text-xl group-hover:bg-brand-600 group-hover:text-white transition-all shadow-soft-xs">
+                                    <i class="fa-solid fa-code"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-base text-slate-900 group-hover:text-brand-800 transition-colors">Google Colab Notebook</h4>
+                                    <p class="text-xs text-slate-500 leading-relaxed mt-1 font-normal">
+                                        Pre-configured interactive Python notebook ready to execute on free GPUs.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-brand-700">
+                                <span>Open Notebook</span>
+                                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                            </div>
+                        </a>
+
+                        <a href="#" class="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-soft-md hover:shadow-soft-lg hover:-translate-y-1 transition-all flex flex-col justify-between group">
+                            <div class="space-y-4">
+                                <div class="w-12 h-12 bg-emerald-50 text-brand-700 rounded-2xl flex items-center justify-center text-xl group-hover:bg-brand-600 group-hover:text-white transition-all shadow-soft-xs">
+                                    <i class="fa-solid fa-table"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-base text-slate-900 group-hover:text-brand-800 transition-colors">Fon Dataset (CSV)</h4>
+                                    <p class="text-xs text-slate-500 leading-relaxed mt-1 font-normal">
+                                        Curated 50-item evaluation prompt pair dataset with reference translations.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-brand-700">
+                                <span>Download Dataset</span>
+                                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                            </div>
+                        </a>
+
+                        <a href="#" class="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-soft-md hover:shadow-soft-lg hover:-translate-y-1 transition-all flex flex-col justify-between group">
+                            <div class="space-y-4">
+                                <div class="w-12 h-12 bg-blue-50 text-blue-700 rounded-2xl flex items-center justify-center text-xl group-hover:bg-brand-600 group-hover:text-white transition-all shadow-soft-xs">
+                                    <i class="fa-solid fa-file-pdf"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-base text-slate-900 group-hover:text-brand-800 transition-colors">Slide Deck (PDF)</h4>
+                                    <p class="text-xs text-slate-500 leading-relaxed mt-1 font-normal">
+                                        Presentation slides covering tokenization limits and metrics in low-resource NLP.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-brand-700">
+                                <span>Download PDF</span>
+                                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                            </div>
+                        </a>
+                    </div>
+                </section>
+
+                <!-- Bannière vers les pages autonomes -->
+                <section class="bg-dot-texture-dark rounded-3xl p-8 sm:p-12 text-white shadow-soft-lg flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
+                    <div class="absolute right-0 bottom-0 opacity-10 pointer-events-none w-64 h-64">
+                        <svg class="w-full h-full text-white" viewBox="0 0 200 200" fill="currentColor">
+                            <path d="M 20,20 L 70,20 L 40,80 L 80,180 L 20,180 Z M 90,20 L 170,20 L 130,180 L 90,180 Z"/>
+                        </svg>
+                    </div>
+
+                    <div class="space-y-2 max-w-xl text-center md:text-left relative z-10">
+                        <span class="text-xs font-bold text-brand-300 uppercase tracking-wider">Ready to test your knowledge or check logistics?</span>
+                        <h3 class="text-2xl sm:text-3xl font-extrabold">Explore Dedicated Workshop Pages</h3>
+                        <p class="text-sm text-brand-100/90">Take our interactive quiz or review the detailed 50-minute workshop schedule on standalone pages.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center justify-center gap-4 shrink-0 relative z-10">
+                        <button onclick="navigateTo('quiz')" class="bg-white text-brand-900 hover:bg-brand-50 font-bold px-6 py-3.5 rounded-2xl text-sm shadow-soft-md transition-all">
+                            <i class="fa-solid fa-vial mr-2 text-brand-600"></i>Take Quiz Page
+                        </button>
+                        <button onclick="navigateTo('details')" class="bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-3.5 rounded-2xl text-sm border border-white/20 transition-all">
+                            <i class="fa-solid fa-circle-info mr-2 text-brand-300"></i>Session Details
+                        </button>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+
+        <!-- ================= PAGE 2: PAGE QUIZ SÉPARÉE ================= -->
+        <div id="page-quiz" class="page-view hidden">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-14 space-y-10">
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <button onclick="navigateTo('home')" class="text-xs font-bold text-brand-700 hover:text-brand-900 flex items-center gap-1.5 bg-brand-50 border border-brand-200 px-3 py-1.5 rounded-full transition-colors">
+                            <i class="fa-solid fa-arrow-left"></i>
+                            <span>Back to Home</span>
+                        </button>
+                        <span class="text-slate-300">/</span>
+                        <span class="text-xs font-semibold text-slate-500">Interactive Quiz Page</span>
+                    </div>
+
+                    <div class="bg-dot-texture rounded-3xl p-8 text-white shadow-soft-lg relative overflow-hidden">
+                        <div class="absolute right-0 top-0 opacity-15 pointer-events-none w-64 h-64">
+                            <svg class="w-full h-full text-white" viewBox="0 0 200 200" fill="currentColor">
+                                <path d="M 30,170 L 60,30 L 110,30 L 90,80 L 140,80 L 110,170 Z"/>
+                            </svg>
+                        </div>
+                        
+                        <div class="relative z-10 space-y-2">
+                            <span class="text-brand-300 font-bold text-xs uppercase tracking-wider">Knowledge Verification</span>
+                            <h1 class="text-3xl sm:text-4xl font-extrabold text-white">Fon LLMs Understanding Quiz</h1>
+                            <p class="text-brand-100 text-sm max-w-2xl">
+                                Test your grasp on low-resource tokenization challenges, prompt strategies, and Fon translation metrics.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-10 shadow-soft-lg space-y-8">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                        <div class="space-y-0.5">
+                            <h3 class="font-extrabold text-lg text-slate-900">Diagnostic Quiz</h3>
+                            <p class="text-xs text-slate-500">Answer all questions to check your workshop readiness.</p>
+                        </div>
+                        <span id="quiz-total-score" class="text-xs font-extrabold bg-brand-50 text-brand-700 px-3.5 py-1.5 rounded-full border border-brand-200">
+                            Score: 0 / 3
+                        </span>
+                    </div>
+
+                    <div class="space-y-6">
+                        <!-- Q1 -->
+                        <div class="bg-slate-50/60 border border-slate-200/70 rounded-2xl p-6 space-y-4" data-quiz-card="1">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-xs text-brand-700 uppercase tracking-wider">Question 1 of 3</span>
+                                <span class="text-xs text-slate-400 font-medium" id="q1-status">Not answered</span>
+                            </div>
+                            <h4 class="font-bold text-base text-slate-900">
+                                Why do standard Byte-Pair Encoding (BPE) tokenizers struggle with Fon text?
+                            </h4>
+                            <div class="space-y-2.5 text-sm">
+                                <button onclick="checkAnswer(1, 0, false)" class="quiz-option w-full text-left p-4 rounded-xl border border-slate-200 hover:border-brand-400 font-medium transition-all flex items-center justify-between bg-white hover:bg-brand-50/30">
+                                    <span>A) Fon uses an incompatible non-Latin script.</span>
+                                    <i class="fa-regular fa-circle text-slate-300"></i>
+                                </button>
+                                <button onclick="checkAnswer(1, 1, true)" class="quiz-option w-full text-left p-4 rounded-xl border border-slate-200 hover:border-brand-400 font-medium transition-all flex items-center justify-between bg-white hover:bg-brand-50/30">
+                                    <span>B) Special tone marks and diacritics cause severe sub-word over-fragmentation.</span>
+                                    <i class="fa-regular fa-circle text-slate-300"></i>
+                                </button>
+                                <button onclick="checkAnswer(1, 2, false)" class="quiz-option w-full text-left p-4 rounded-xl border border-slate-200 hover:border-brand-400 font-medium transition-all flex items-center justify-between bg-white hover:bg-brand-50/30">
+                                    <span>C) Open LLMs are hardcoded to reject African language inputs.</span>
+                                    <i class="fa-regular fa-circle text-slate-300"></i>
+                                </button>
+                            </div>
+                            <div id="q1-feedback" class="hidden p-4 rounded-xl text-xs font-semibold"></div>
+                        </div>
+
+                        <!-- Q2 -->
+                        <div class="bg-slate-50/60 border border-slate-200/70 rounded-2xl p-6 space-y-4" data-quiz-card="2">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-xs text-brand-700 uppercase tracking-wider">Question 2 of 3</span>
+                                <span class="text-xs text-slate-400 font-medium" id="q2-status">Not answered</span>
+                            </div>
+                            <h4 class="font-bold text-base text-slate-900">
+                                What is the key advantage of Few-Shot Prompting when evaluating low-resource languages?
+                            </h4>
+                            <div class="space-y-2.5 text-sm">
+                                <button onclick="checkAnswer(2, 0, false)" class="quiz-option w-full text-left p-4 rounded-xl border border-slate-200 hover:border-brand-400 font-medium transition-all flex items-center justify-between bg-white hover:bg-brand-50/30">
+                                    <span>A) It permanently updates the internal model parameters.</span>
+                                    <i class="fa-regular fa-circle text-slate-300"></i>
+                                </button>
+                                <button onclick="checkAnswer(2, 1, false)" class="quiz-option w-full text-left p-4 rounded-xl border border-slate-200 hover:border-brand-400 font-medium transition-all flex items-center justify-between bg-white hover:bg-brand-50/30">
+                                    <span>B) It speeds up response times by 90%.</span>
+                                    <i class="fa-regular fa-circle text-slate-300"></i>
+                                </button>
+                                <button onclick="checkAnswer(2, 2, true)" class="quiz-option w-full text-left p-4 rounded-xl border border-slate-200 hover:border-brand-400 font-medium transition-all flex items-center justify-between bg-white hover:bg-brand-50/30">
+                                    <span>C) It provides in-domain context examples to guide the model without fine-tuning.</span>
+                                    <i class="fa-regular fa-circle text-slate-300"></i>
+                                </button>
+                            </div>
+                            <div id="q2-feedback" class="hidden p-4 rounded-xl text-xs font-semibold"></div>
+                        </div>
+
+                        <!-- Q3 -->
+                        <div class="bg-slate-50/60 border border-slate-200/70 rounded-2xl p-6 space-y-4" data-quiz-card="3">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-xs text-brand-700 uppercase tracking-wider">Question 3 of 3</span>
+                                <span class="text-xs text-slate-400 font-medium" id="q3-status">Not answered</span>
+                            </div>
+                            <h4 class="font-bold text-base text-slate-900">
+                                Why is BLEU score alone insufficient for measuring Fon translation accuracy?
+                            </h4>
+                            <div class="space-y-2.5 text-sm">
+                                <button onclick="checkAnswer(3, 0, true)" class="quiz-option w-full text-left p-4 rounded-xl border border-slate-200 hover:border-brand-400 font-medium transition-all flex items-center justify-between bg-white hover:bg-brand-50/30">
+                                    <span>A) BLEU fails to capture morphological complexity and tone-dependent semantic shifts.</span>
+                                    <i class="fa-regular fa-circle text-slate-300"></i>
+                                </button>
+                                <button onclick="checkAnswer(3, 1, false)" class="quiz-option w-full text-left p-4 rounded-xl border border-slate-200 hover:border-brand-400 font-medium transition-all flex items-center justify-between bg-white hover:bg-brand-50/30">
+                                    <span>B) BLEU only supports European sentence structures.</span>
+                                    <i class="fa-regular fa-circle text-slate-300"></i>
+                                </button>
+                                <button onclick="checkAnswer(3, 2, false)" class="quiz-option w-full text-left p-4 rounded-xl border border-slate-200 hover:border-brand-400 font-medium transition-all flex items-center justify-between bg-white hover:bg-brand-50/30">
+                                    <span>C) BLEU requires a dataset of over 500,000 parallel sentences.</span>
+                                    <i class="fa-regular fa-circle text-slate-300"></i>
+                                </button>
+                            </div>
+                            <div id="q3-feedback" class="hidden p-4 rounded-xl text-xs font-semibold"></div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+                        <button onclick="navigateTo('home')" class="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-arrow-left"></i> Return to Homepage
+                        </button>
+                        <button onclick="navigateTo('details')" class="bg-brand-800 hover:bg-brand-900 text-white font-bold px-6 py-3 rounded-xl text-xs shadow-soft-xs transition-all flex items-center gap-2">
+                            <span>Proceed to Session Details</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PAGE 3: PAGE DÉTAILS SÉPARÉE ================= -->
+        <div id="page-details" class="page-view hidden">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-14 space-y-10">
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <button onclick="navigateTo('home')" class="text-xs font-bold text-brand-700 hover:text-brand-900 flex items-center gap-1.5 bg-brand-50 border border-brand-200 px-3 py-1.5 rounded-full transition-colors">
+                            <i class="fa-solid fa-arrow-left"></i>
+                            <span>Back to Home</span>
+                        </button>
+                        <span class="text-slate-300">/</span>
+                        <span class="text-xs font-semibold text-slate-500">Session Details Page</span>
+                    </div>
+
+                    <div class="bg-dot-texture rounded-3xl p-8 text-white shadow-soft-lg relative overflow-hidden">
+                        <div class="absolute right-0 top-0 opacity-15 pointer-events-none w-64 h-64">
+                            <svg class="w-full h-full text-white" viewBox="0 0 240 240" fill="currentColor">
+                                <path d="M110 30h80v40h-50v30h40v40h-40v50h-30z M190 30h40v180h-40z"/>
+                            </svg>
+                        </div>
+                        
+                        <div class="relative z-10 space-y-2">
+                            <span class="text-brand-300 font-bold text-xs uppercase tracking-wider">Workshop Logistics & Agenda</span>
+                            <h1 class="text-3xl sm:text-4xl font-extrabold text-white">Session Specifications & Schedule</h1>
+                            <p class="text-brand-100 text-sm max-w-2xl">
+                                Full technical breakdown, format outline, and prerequisites for the IndabaX Benin 2026 workshop.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200/80 rounded-3xl p-8 sm:p-12 shadow-soft-lg space-y-10">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                        <div class="bg-slate-50/80 border border-slate-200/60 p-5 rounded-2xl space-y-2">
+                            <div class="text-brand-700 text-lg"><i class="fa-solid fa-layer-group"></i></div>
+                            <span class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Domain</span>
+                            <p class="font-bold text-sm text-slate-900">Generative AI & African NLP</p>
+                        </div>
+
+                        <div class="bg-slate-50/80 border border-slate-200/60 p-5 rounded-2xl space-y-2">
+                            <div class="text-brand-700 text-lg"><i class="fa-regular fa-clock"></i></div>
+                            <span class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Duration</span>
+                            <p class="font-bold text-sm text-slate-900">50 Minutes Total (Guided Practice)</p>
+                        </div>
+
+                        <div class="bg-slate-50/80 border border-slate-200/60 p-5 rounded-2xl space-y-2">
+                            <div class="text-brand-700 text-lg"><i class="fa-solid fa-graduation-cap"></i></div>
+                            <span class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Prerequisites</span>
+                            <p class="font-bold text-sm text-slate-900">Basic Python (No Prior LLM Experience)</p>
+                        </div>
+
+                        <div class="bg-slate-50/80 border border-slate-200/60 p-5 rounded-2xl space-y-2">
+                            <div class="text-brand-700 text-lg"><i class="fa-solid fa-laptop-code"></i></div>
+                            <span class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Format</span>
+                            <p class="font-bold text-sm text-slate-900">15m Intro + 35m Hands-on Coding</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-5 pt-4 border-t border-slate-100">
+                        <h3 class="font-extrabold text-xl text-slate-900">Detailed Session Agenda</h3>
+                        
+                        <div class="space-y-4 text-sm">
+                            <div class="flex items-start gap-4 p-5 rounded-2xl bg-slate-50/60 border border-slate-200/60">
+                                <span class="bg-brand-800 text-white font-mono font-bold text-xs px-3 py-1.5 rounded-lg shrink-0">00:00 - 00:15</span>
+                                <div class="space-y-1">
+                                    <h4 class="font-bold text-slate-900 text-base">Keynote: Fon NLP Challenges & Evaluation Limits</h4>
+                                    <p class="text-xs text-slate-600 leading-relaxed">
+                                        Understanding Fon orthography, tone markers, tokenization bottlenecks, and why baseline models hallucinate on African languages.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-4 p-5 rounded-2xl bg-slate-50/60 border border-slate-200/60">
+                                <span class="bg-brand-800 text-white font-mono font-bold text-xs px-3 py-1.5 rounded-lg shrink-0">00:15 - 00:40</span>
+                                <div class="space-y-1">
+                                    <h4 class="font-bold text-slate-900 text-base">Guided Lab: Building the Benchmark in Google Colab</h4>
+                                    <p class="text-xs text-slate-600 leading-relaxed">
+                                        Running comparative inference queries on LLaMA-3, Qwen, and Mistral, collecting outputs, and computing rubric scores.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-4 p-5 rounded-2xl bg-slate-50/60 border border-slate-200/60">
+                                <span class="bg-brand-800 text-white font-mono font-bold text-xs px-3 py-1.5 rounded-lg shrink-0">00:40 - 00:50</span>
+                                <div class="space-y-1">
+                                    <h4 class="font-bold text-slate-900 text-base">Leaderboard Synthesis & Q&A</h4>
+                                    <p class="text-xs text-slate-600 leading-relaxed">
+                                        Aggregating live cohort data to declare top-performing Fon model and discussing future research directions.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-brand-50/50 border border-brand-200/80 rounded-2xl p-6 space-y-3">
+                        <h4 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-map-location-dot text-brand-700"></i>
+                            <span>Venue & Participation Methods</span>
+                        </h4>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            This workshop is held live in Cotonou, Benin during the IndabaX Benin 2026 conference, with live streaming and interactive Google Colab breakout groups for virtual participants.
+                        </p>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <button onclick="navigateTo('quiz')" class="text-xs font-bold text-brand-700 hover:text-brand-900 flex items-center gap-2">
+                            <i class="fa-solid fa-vial"></i> Take the Diagnostic Quiz
+                        </button>
+                        <a href="mailto:contact@indabax.bj" class="w-full sm:w-auto bg-brand-800 hover:bg-brand-900 text-white font-bold px-8 py-3.5 rounded-xl text-xs shadow-soft-xs transition-all text-center">
+                            Register via Email Inquiry
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Pied de page -->
+    <footer class="bg-white border-t border-slate-200/80 pt-10 pb-12 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-slate-500 font-medium">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-brand-800 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-soft-xs">
+                        I
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-800">IndabaX Benin 2026</p>
+                        <p class="text-[11px] text-slate-400">Fon Language LLM Benchmarking Workshop</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-6">
+                    <a href="mailto:contact@indabax.bj" class="hover:text-brand-700 flex items-center gap-2 transition-colors">
+                        <i class="fa-regular fa-envelope"></i>
+                        <span>contact@indabax.bj</span>
+                    </a>
+                    <a href="https://indabax.bj/en/workshop" target="_blank" rel="noopener" class="hover:text-brand-700 flex items-center gap-2 transition-colors">
+                        <i class="fa-solid fa-globe"></i>
+                        <span>indabax.bj</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="text-center text-[11px] text-slate-400 pt-4 border-t border-slate-100">
+                &copy; 2026 IndabaX Benin. Open educational content under Creative Commons CC BY 4.0.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts interactifs -->
+    <script>
+        // Menu Mobile
+        const mobileBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        if (mobileBtn && mobileMenu) {
+            mobileBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
+
+        // Quiz
+        let userScores = { 1: false, 2: false, 3: false };
+
+        function checkAnswer(questionNum, optionIdx, isCorrect) {
+            const card = document.querySelector(`[data-quiz-card="${questionNum}"]`);
+            if (!card) return;
+
+            const statusEl = document.getElementById(`q${questionNum}-status`);
+            const feedbackEl = document.getElementById(`q${questionNum}-feedback`);
+            const buttons = card.querySelectorAll('.quiz-option');
+
+            buttons.forEach(btn => {
+                btn.classList.remove('border-rose-400', 'bg-rose-50/50', 'border-emerald-500', 'bg-emerald-50/50');
+                const icon = btn.querySelector('i');
+                if (icon) icon.className = 'fa-regular fa-circle text-slate-300';
+            });
+
+            const selectedBtn = buttons[optionIdx];
+            if (!selectedBtn) return;
+            const selectedIcon = selectedBtn.querySelector('i');
+
+            if (isCorrect) {
+                selectedBtn.classList.add('border-emerald-500', 'bg-emerald-50/50');
+                if (selectedIcon) selectedIcon.className = 'fa-solid fa-circle-check text-emerald-600';
+                
+                if (statusEl) {
+                    statusEl.textContent = 'Correct!';
+                    statusEl.className = 'text-xs text-emerald-600 font-bold';
+                }
+                
+                if (feedbackEl) {
+                    feedbackEl.className = 'p-4 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 block';
+                    feedbackEl.innerHTML = '<i class="fa-solid fa-circle-check mr-2"></i> Correct! Fon diacritics and tone accents cause rare sub-word token splitting in standard tokenizers.';
+                }
+
+                userScores[questionNum] = true;
+            } else {
+                selectedBtn.classList.add('border-rose-400', 'bg-rose-50/50');
+                if (selectedIcon) selectedIcon.className = 'fa-solid fa-circle-xmark text-rose-500';
+                
+                if (statusEl) {
+                    statusEl.textContent = 'Incorrect';
+                    statusEl.className = 'text-xs text-rose-500 font-bold';
+                }
+                
+                if (feedbackEl) {
+                    feedbackEl.className = 'p-4 rounded-xl text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200 block';
+                    feedbackEl.innerHTML = '<i class="fa-solid fa-circle-xmark mr-2"></i> Incorrect. Try selecting another option to learn why LLMs struggle with African orthographies.';
+                }
+
+                userScores[questionNum] = false;
+            }
+
+            const totalScore = Object.values(userScores).filter(Boolean).length;
+            const scoreDisplay = document.getElementById('quiz-total-score');
+            if (scoreDisplay) {
+                scoreDisplay.textContent = `Score: ${totalScore} / 3`;
+            }
+        }
+    </script>
+</body>
+</html>
